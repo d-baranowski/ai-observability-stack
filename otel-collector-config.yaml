@@ -1,0 +1,45 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 1000
+  # Promote useful resource attributes onto each metric so we can group/filter
+  # in PromQL by user, session, model, organization etc.
+  attributes/from_resource:
+    actions:
+      - key: user_id
+        from_context: resource.user.id
+        action: insert
+
+exporters:
+  # Metrics: exposed on :8889 in Prometheus format, scraped by Prometheus.
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    resource_to_telemetry_conversion:
+      enabled: true   # turn resource attrs (user.id, session.id, model, ...) into labels
+    enable_open_metrics: true
+
+  # Logs: pushed to Loki.
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus, debug]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/loki, debug]

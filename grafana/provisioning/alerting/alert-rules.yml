@@ -1,0 +1,91 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: claude-code-cost
+    folder: Claude Code
+    interval: 1m
+    rules:
+      - uid: cc-hourly-cost
+        title: Claude Code hourly cost > $5
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 3600, to: 0}
+            datasourceUid: prometheus
+            model:
+              expr: sum(increase(claude_code_cost_usage_USD_total[1h]))
+              instant: true
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: {type: gt, params: [5]}
+              refId: C
+        for: 5m
+        noDataState: OK
+        execErrState: OK
+        annotations:
+          summary: Claude Code spent over $5 in the last hour
+          description: "Total Claude Code cost in the last 1h: {{ humanize $values.A.Value }} USD"
+        labels:
+          severity: warning
+
+      - uid: cc-daily-cost
+        title: Claude Code daily cost > $50
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 86400, to: 0}
+            datasourceUid: prometheus
+            model:
+              expr: sum(increase(claude_code_cost_usage_USD_total[24h]))
+              instant: true
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: {type: gt, params: [50]}
+              refId: C
+        for: 10m
+        noDataState: OK
+        execErrState: OK
+        annotations:
+          summary: Claude Code spent over $50 in the last 24h
+          description: "Total Claude Code cost in the last 24h: {{ humanize $values.A.Value }} USD"
+        labels:
+          severity: critical
+
+      - uid: cc-token-burn
+        title: Claude Code token burn > 1M tokens / 5min
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange: {from: 300, to: 0}
+            datasourceUid: prometheus
+            model:
+              expr: sum(increase(claude_code_token_usage_tokens_total[5m]))
+              instant: true
+              refId: A
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: {type: gt, params: [1000000]}
+              refId: C
+        for: 5m
+        noDataState: OK
+        execErrState: OK
+        annotations:
+          summary: Unusual Claude Code token burn rate
+          description: "{{ humanize $values.A.Value }} tokens consumed in the last 5 minutes"
+        labels:
+          severity: warning

@@ -1,0 +1,167 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "title": "Claude Code — Cost & Usage",
+  "uid": "claude-code-overview",
+  "version": 1,
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "time": {"from": "now-24h", "to": "now"},
+  "tags": ["claude-code", "otel"],
+  "templating": {
+    "list": [
+      {
+        "name": "user",
+        "label": "User",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "query": "label_values(claude_code_cost_usage_USD_total, user_email)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": {"text": "All", "value": "$__all"}
+      },
+      {
+        "name": "model",
+        "label": "Model",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "query": "label_values(claude_code_token_usage_tokens_total, model)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": {"text": "All", "value": "$__all"}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Total cost (selected range)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 6, "x": 0, "y": 0},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [
+            {"color": "green", "value": null},
+            {"color": "yellow", "value": 5},
+            {"color": "red", "value": 25}
+          ]}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "targets": [{
+        "expr": "sum(increase(claude_code_cost_usage_USD_total{user_email=~\"$user\"}[$__range]))",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Active time",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 6, "x": 6, "y": 0},
+      "fieldConfig": {"defaults": {"unit": "s"}},
+      "targets": [{
+        "expr": "sum(increase(claude_code_active_time_seconds_total{user_email=~\"$user\"}[$__range]))",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Lines of code added",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 6, "x": 12, "y": 0},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [{
+        "expr": "sum(increase(claude_code_lines_of_code_count_total{user_email=~\"$user\", type=\"added\"}[$__range]))",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Total tokens",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 6, "x": 18, "y": 0},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [{
+        "expr": "sum(increase(claude_code_token_usage_tokens_total{user_email=~\"$user\", model=~\"$model\"}[$__range]))",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Cost over time (USD/hour)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 5},
+      "fieldConfig": {"defaults": {"unit": "currencyUSD"}},
+      "targets": [{
+        "expr": "sum by (model) (rate(claude_code_cost_usage_USD_total{user_email=~\"$user\", model=~\"$model\"}[5m]) * 3600)",
+        "legendFormat": "{{model}}",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Tokens by type",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 5},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [{
+        "expr": "sum by (type) (rate(claude_code_token_usage_tokens_total{user_email=~\"$user\", model=~\"$model\"}[5m]))",
+        "legendFormat": "{{type}}",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 7,
+      "type": "barchart",
+      "title": "Cost by user (top 10)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 14},
+      "fieldConfig": {"defaults": {"unit": "currencyUSD"}},
+      "targets": [{
+        "expr": "topk(10, sum by (user_email) (increase(claude_code_cost_usage_USD_total[$__range])))",
+        "legendFormat": "{{user_email}}",
+        "refId": "A",
+        "instant": true
+      }]
+    },
+    {
+      "id": 8,
+      "type": "piechart",
+      "title": "Edit tool decisions",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 14},
+      "targets": [{
+        "expr": "sum by (decision) (increase(claude_code_code_edit_tool_decision_total{user_email=~\"$user\"}[$__range]))",
+        "legendFormat": "{{decision}}",
+        "refId": "A",
+        "instant": true
+      }]
+    },
+    {
+      "id": 9,
+      "type": "logs",
+      "title": "Claude Code events (Loki)",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 23},
+      "options": {"showTime": true, "wrapLogMessage": true, "dedupStrategy": "none"},
+      "targets": [{
+        "expr": "{service_name=\"claude-code\"}",
+        "refId": "A"
+      }]
+    }
+  ]
+}
