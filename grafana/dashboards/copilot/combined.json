@@ -1,0 +1,164 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "title": "AI Coding — Combined (Claude Code + Copilot)",
+  "uid": "ai-coding-combined",
+  "version": 1,
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "time": {"from": "now-24h", "to": "now"},
+  "tags": ["claude-code", "copilot", "otel", "combined"],
+  "templating": {"list": []},
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Total cost (Claude Code, actual)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 6, "x": 0, "y": 0},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 2,
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [
+            {"color": "blue", "value": null}
+          ]}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "targets": [{
+        "expr": "sum(increase(claude_code_cost_usage_USD_total[$__range]))",
+        "instant": true,
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Total cost (Copilot, estimated)",
+      "description": "Estimate from token usage × public per-token API prices. NOT what GitHub bills you (Copilot is seat-licensed).",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 6, "x": 6, "y": 0},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 4,
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [
+            {"color": "purple", "value": null}
+          ]}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "targets": [{
+        "expr": "sum(\n    (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=\"gpt-4.1\", gen_ai_token_type=\"input\"}[$__range]) * 0.000002)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=\"gpt-4.1\", gen_ai_token_type=\"output\"}[$__range]) * 0.000008)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o-mini.*\", gen_ai_token_type=\"input\"}[$__range]) * 0.00000015)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o-mini.*\", gen_ai_token_type=\"output\"}[$__range]) * 0.0000006)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o\", gen_ai_token_type=\"input\"}[$__range]) * 0.0000025)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o\", gen_ai_token_type=\"output\"}[$__range]) * 0.00001)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"claude-3-5-sonnet.*|claude-3.5-sonnet.*|claude-3-7-sonnet.*|claude-3.7-sonnet.*|claude-sonnet-4.*\", gen_ai_token_type=\"input\"}[$__range]) * 0.000003)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"claude-3-5-sonnet.*|claude-3.5-sonnet.*|claude-3-7-sonnet.*|claude-3.7-sonnet.*|claude-sonnet-4.*\", gen_ai_token_type=\"output\"}[$__range]) * 0.000015)\n)",
+        "instant": true,
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Total tokens (both tools)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 6, "x": 12, "y": 0},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [{
+        "expr": "sum(increase(claude_code_token_usage_tokens_total[$__range])) + sum(increase(gen_ai_client_token_usage_sum[$__range]))",
+        "instant": true,
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Total tool calls / edits",
+      "description": "Claude Code: edit tool decisions. Copilot: tool call counter.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 6, "x": 18, "y": 0},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [{
+        "expr": "sum(increase(claude_code_code_edit_tool_decision_total[$__range])) + sum(increase(copilot_chat_tool_call_count_total[$__range]))",
+        "instant": true,
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Cost rate (USD/hour)",
+      "description": "Claude Code: actual. Copilot: estimated from token usage × public model API prices.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 5},
+      "fieldConfig": {"defaults": {"unit": "currencyUSD"}},
+      "targets": [
+        {
+          "expr": "sum(rate(claude_code_cost_usage_USD_total[5m])) * 3600",
+          "legendFormat": "Claude Code (actual)",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(\n    (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=\"gpt-4.1\", gen_ai_token_type=\"input\"}[5m]) * 0.000002)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=\"gpt-4.1\", gen_ai_token_type=\"output\"}[5m]) * 0.000008)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o-mini.*\", gen_ai_token_type=\"input\"}[5m]) * 0.00000015)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o-mini.*\", gen_ai_token_type=\"output\"}[5m]) * 0.0000006)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o\", gen_ai_token_type=\"input\"}[5m]) * 0.0000025)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o\", gen_ai_token_type=\"output\"}[5m]) * 0.00001)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"claude-3-5-sonnet.*|claude-3.5-sonnet.*|claude-3-7-sonnet.*|claude-3.7-sonnet.*|claude-sonnet-4.*\", gen_ai_token_type=\"input\"}[5m]) * 0.000003)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"claude-3-5-sonnet.*|claude-3.5-sonnet.*|claude-3-7-sonnet.*|claude-3.7-sonnet.*|claude-sonnet-4.*\", gen_ai_token_type=\"output\"}[5m]) * 0.000015)\n) * 3600",
+          "legendFormat": "Copilot (estimated)",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Tokens/min by source",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 5},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [
+        {
+          "expr": "sum(rate(claude_code_token_usage_tokens_total[5m])) * 60",
+          "legendFormat": "Claude Code",
+          "refId": "A"
+        },
+        {
+          "expr": "sum(rate(gen_ai_client_token_usage_sum[5m])) * 60",
+          "legendFormat": "Copilot",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Cost over time by model",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 24, "x": 0, "y": 14},
+      "fieldConfig": {"defaults": {"unit": "currencyUSD"}},
+      "targets": [
+        {
+          "expr": "sum by (model) (rate(claude_code_cost_usage_USD_total[5m])) * 3600",
+          "legendFormat": "Claude: {{model}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by (gen_ai_request_model) (\n    (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=\"gpt-4.1\", gen_ai_token_type=\"input\"}[5m]) * 0.000002)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=\"gpt-4.1\", gen_ai_token_type=\"output\"}[5m]) * 0.000008)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o-mini.*\", gen_ai_token_type=\"input\"}[5m]) * 0.00000015)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o-mini.*\", gen_ai_token_type=\"output\"}[5m]) * 0.0000006)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o\", gen_ai_token_type=\"input\"}[5m]) * 0.0000025)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o\", gen_ai_token_type=\"output\"}[5m]) * 0.00001)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"claude-3-5-sonnet.*|claude-3.5-sonnet.*|claude-3-7-sonnet.*|claude-3.7-sonnet.*|claude-sonnet-4.*\", gen_ai_token_type=\"input\"}[5m]) * 0.000003)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"claude-3-5-sonnet.*|claude-3.5-sonnet.*|claude-3-7-sonnet.*|claude-3.7-sonnet.*|claude-sonnet-4.*\", gen_ai_token_type=\"output\"}[5m]) * 0.000015)\n) * 3600",
+          "legendFormat": "Copilot: {{gen_ai_request_model}}",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "logs",
+      "title": "All AI coding events (Claude Code + Copilot)",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 12, "w": 24, "x": 0, "y": 23},
+      "options": {"showTime": true, "wrapLogMessage": true, "dedupStrategy": "none"},
+      "targets": [{
+        "expr": "{service_name=~\"claude-code|copilot-chat\"}",
+        "refId": "A"
+      }]
+    }
+  ]
+}

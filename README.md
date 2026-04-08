@@ -34,6 +34,32 @@ export OTEL_LOGS_EXPORT_INTERVAL=5000
 Restart any running `claude` sessions. After ~30s metrics will start showing
 on the dashboard.
 
+## Point GitHub Copilot (VS Code) at the stack
+
+Copilot Chat in VS Code can also push OTLP straight into the same collector.
+Either set env vars before launching VS Code:
+
+```sh
+export COPILOT_OTEL_ENABLED=true
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+# Optional: also send prompt/response content (off by default)
+# export COPILOT_OTEL_CAPTURE_CONTENT=true
+```
+
+…or configure in VS Code settings:
+
+```json
+{
+  "github.copilot.chat.otel.enabled": true,
+  "github.copilot.chat.otel.otlpEndpoint": "http://localhost:4317",
+  "github.copilot.chat.otel.exporterType": "otlp-grpc"
+}
+```
+
+Reload the window. The "GitHub Copilot — Usage & Latency" dashboard lives in
+the **Copilot** folder.
+
 ## What you get
 
 **Dashboard panels** (filterable by user + model):

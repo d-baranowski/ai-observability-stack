@@ -1,0 +1,221 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "title": "GitHub Copilot — Usage & Latency",
+  "uid": "copilot-overview",
+  "version": 1,
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "time": {"from": "now-24h", "to": "now"},
+  "tags": ["copilot", "otel", "gen-ai"],
+  "templating": {
+    "list": [
+      {
+        "name": "model",
+        "label": "Model",
+        "type": "query",
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "query": "label_values(gen_ai_client_token_usage_sum, gen_ai_request_model)",
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": {"text": "All", "value": "$__all"}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Total tokens (selected range)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 6, "x": 0, "y": 0},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "targets": [{
+        "expr": "sum(increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"$model\"}[$__range]))",
+        "instant": true,
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "LLM requests",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 6, "x": 6, "y": 0},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [{
+        "expr": "sum(increase(gen_ai_client_token_usage_count{gen_ai_request_model=~\"$model\"}[$__range]))",
+        "instant": true,
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Sessions",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 6, "x": 12, "y": 0},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [{
+        "expr": "sum(increase(copilot_chat_session_count_total[$__range]))",
+        "instant": true,
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Tool calls",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 6, "x": 18, "y": 0},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [{
+        "expr": "sum(increase(copilot_chat_tool_call_count_total[$__range]))",
+        "instant": true,
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Tokens/min by model",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 5},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [{
+        "expr": "sum by (gen_ai_request_model) (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"$model\"}[5m])) * 60",
+        "legendFormat": "{{gen_ai_request_model}}",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "LLM operation duration (p50 / p95)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 5},
+      "fieldConfig": {"defaults": {"unit": "ms"}},
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, sum by (le, gen_ai_request_model) (rate(gen_ai_client_operation_duration_bucket{gen_ai_request_model=~\"$model\"}[5m])))",
+          "legendFormat": "p50 {{gen_ai_request_model}}",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by (le, gen_ai_request_model) (rate(gen_ai_client_operation_duration_bucket{gen_ai_request_model=~\"$model\"}[5m])))",
+          "legendFormat": "p95 {{gen_ai_request_model}}",
+          "refId": "B"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Time to first token (p95)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 14},
+      "fieldConfig": {"defaults": {"unit": "ms"}},
+      "targets": [{
+        "expr": "histogram_quantile(0.95, sum by (le) (rate(copilot_chat_time_to_first_token_bucket[5m])))",
+        "legendFormat": "p95",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 8,
+      "type": "barchart",
+      "title": "Tool calls by tool (top 10)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 14},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [{
+        "expr": "topk(10, sum by (gen_ai_tool_name) (increase(copilot_chat_tool_call_count_total[$__range])))",
+        "legendFormat": "{{gen_ai_tool_name}}",
+        "refId": "A",
+        "instant": true
+      }]
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Tool call duration (p95, ms)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 24, "x": 0, "y": 23},
+      "fieldConfig": {"defaults": {"unit": "ms"}},
+      "targets": [{
+        "expr": "histogram_quantile(0.95, sum by (le, gen_ai_tool_name) (rate(copilot_chat_tool_call_duration_bucket[5m])))",
+        "legendFormat": "p95 {{gen_ai_tool_name}}",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 11,
+      "type": "stat",
+      "title": "Estimated cost (selected range)",
+      "description": "Estimate based on token usage × public per-token API prices for the underlying models. This is NOT what GitHub charges you (Copilot is seat-licensed). Useful for relative comparison of usage intensity. Update prices in the panel query as model pricing changes.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 12, "x": 0, "y": 32},
+      "fieldConfig": {
+        "defaults": {
+          "unit": "currencyUSD",
+          "decimals": 4,
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [
+            {"color": "green", "value": null},
+            {"color": "yellow", "value": 1},
+            {"color": "red", "value": 10}
+          ]}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "targets": [{
+        "expr": "sum(\n    (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=\"gpt-4.1\", gen_ai_token_type=\"input\"}[$__range]) * 0.000002)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=\"gpt-4.1\", gen_ai_token_type=\"output\"}[$__range]) * 0.000008)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o-mini.*\", gen_ai_token_type=\"input\"}[$__range]) * 0.00000015)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o-mini.*\", gen_ai_token_type=\"output\"}[$__range]) * 0.0000006)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o\", gen_ai_token_type=\"input\"}[$__range]) * 0.0000025)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o\", gen_ai_token_type=\"output\"}[$__range]) * 0.00001)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"claude-3-5-sonnet.*|claude-3.5-sonnet.*|claude-3-7-sonnet.*|claude-3.7-sonnet.*|claude-sonnet-4.*\", gen_ai_token_type=\"input\"}[$__range]) * 0.000003)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"claude-3-5-sonnet.*|claude-3.5-sonnet.*|claude-3-7-sonnet.*|claude-3.7-sonnet.*|claude-sonnet-4.*\", gen_ai_token_type=\"output\"}[$__range]) * 0.000015)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gemini-2.*flash.*\", gen_ai_token_type=\"input\"}[$__range]) * 0.0000001)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gemini-2.*flash.*\", gen_ai_token_type=\"output\"}[$__range]) * 0.0000004)\n)",
+        "instant": true,
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 12,
+      "type": "barchart",
+      "title": "Estimated cost by model (selected range)",
+      "description": "Same caveat as the total estimate panel — public per-token API prices, not actual Copilot billing.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 5, "w": 12, "x": 12, "y": 32},
+      "fieldConfig": {"defaults": {"unit": "currencyUSD", "decimals": 4}},
+      "targets": [
+        {"expr": "sum by (gen_ai_request_model) (\n    (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=\"gpt-4.1\", gen_ai_token_type=\"input\"}[$__range]) * 0.000002)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=\"gpt-4.1\", gen_ai_token_type=\"output\"}[$__range]) * 0.000008)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o-mini.*\", gen_ai_token_type=\"input\"}[$__range]) * 0.00000015)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o-mini.*\", gen_ai_token_type=\"output\"}[$__range]) * 0.0000006)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o\", gen_ai_token_type=\"input\"}[$__range]) * 0.0000025)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o\", gen_ai_token_type=\"output\"}[$__range]) * 0.00001)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"claude-3-5-sonnet.*|claude-3.5-sonnet.*|claude-3-7-sonnet.*|claude-3.7-sonnet.*|claude-sonnet-4.*\", gen_ai_token_type=\"input\"}[$__range]) * 0.000003)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"claude-3-5-sonnet.*|claude-3.5-sonnet.*|claude-3-7-sonnet.*|claude-3.7-sonnet.*|claude-sonnet-4.*\", gen_ai_token_type=\"output\"}[$__range]) * 0.000015)\n)", "legendFormat": "{{gen_ai_request_model}}", "refId": "A", "instant": true}
+      ]
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "Tokens/min by type",
+      "description": "Token throughput broken down by gen_ai.token.type (input vs output).",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 24, "x": 0, "y": 37},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [{
+        "expr": "sum by (gen_ai_token_type) (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"$model\"}[5m])) * 60",
+        "legendFormat": "{{gen_ai_token_type}}",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 10,
+      "type": "logs",
+      "title": "Copilot Chat events (Loki)",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 46},
+      "options": {"showTime": true, "wrapLogMessage": true, "dedupStrategy": "none"},
+      "targets": [{
+        "expr": "{service_name=\"copilot-chat\"}",
+        "refId": "A"
+      }]
+    }
+  ]
+}

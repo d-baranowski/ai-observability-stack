@@ -9,5 +9,16 @@ providers:
     updateIntervalSeconds: 30
     allowUiUpdates: true
     options:
-      path: /var/lib/grafana/dashboards
+      path: /var/lib/grafana/dashboards/claude-code
+      foldersFromFilesStructure: false
+
+  - name: copilot
+    orgId: 1
+    folder: Copilot
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards/copilot
       foldersFromFilesStructure: false
