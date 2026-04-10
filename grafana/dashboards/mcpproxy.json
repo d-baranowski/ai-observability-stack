@@ -1,0 +1,394 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "title": "MCPProxy — Activity & Tools",
+  "uid": "mcpproxy-overview",
+  "version": 1,
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "time": {"from": "now-24h", "to": "now"},
+  "tags": ["mcpproxy", "mcp", "tools"],
+  "templating": {
+    "list": [
+      {
+        "name": "server",
+        "label": "Server",
+        "type": "query",
+        "datasource": {"type": "loki", "uid": "loki"},
+        "query": {"type": 1, "label": "server", "stream": "{job=\"mcpproxy\"}"},
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": {"text": "All", "value": "$__all"}
+      },
+      {
+        "name": "event_type",
+        "label": "Event Type",
+        "type": "query",
+        "datasource": {"type": "loki", "uid": "loki"},
+        "query": {"type": 1, "label": "event_type", "stream": "{job=\"mcpproxy\"}"},
+        "refresh": 2,
+        "includeAll": true,
+        "multi": true,
+        "current": {"text": "All", "value": "$__all"}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Total Events",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [
+            {"color": "green", "value": null}
+          ]}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["sum"]}, "colorMode": "background"},
+      "targets": [{
+        "expr": "sum(count_over_time({job=\"mcpproxy\", server=~\"$server\", event_type=~\"$event_type\", event_type!=\"tool_quarantine_change\"} [$__range]))",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Tool Calls",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [
+            {"color": "blue", "value": null}
+          ]}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["sum"]}, "colorMode": "background"},
+      "targets": [{
+        "expr": "sum(count_over_time({job=\"mcpproxy\", event_type=\"tool_call\", server=~\"$server\"} [$__range]))",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Errors",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [
+            {"color": "green", "value": null},
+            {"color": "red", "value": 1}
+          ]}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["sum"]}, "colorMode": "background"},
+      "targets": [{
+        "expr": "sum(count_over_time({job=\"mcpproxy\", event_status=\"error\", server=~\"$server\"} [$__range]))",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Sensitive Data Detections",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [
+            {"color": "green", "value": null},
+            {"color": "orange", "value": 1},
+            {"color": "red", "value": 5}
+          ]}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["sum"]}, "colorMode": "background"},
+      "targets": [{
+        "expr": "sum(count_over_time({job=\"mcpproxy\", server=~\"$server\"} | json | has_sensitive_data=`true` [$__range]))",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Quarantine Pending",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 0},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [
+            {"color": "green", "value": null},
+            {"color": "yellow", "value": 1}
+          ]}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "targets": [{
+        "expr": "count(sum by (tool_name) (count_over_time({job=\"mcpproxy\", event_type=\"tool_quarantine_change\", event_status=\"tool_discovered\"} | json [14d])) unless sum by (tool_name) (count_over_time({job=\"mcpproxy\", event_type=\"tool_quarantine_change\", event_status=\"tool_approved\"} | json [14d])))",
+        "refId": "A",
+        "instant": true
+      }]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Active Servers",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 0},
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "thresholds": {"mode": "absolute", "steps": [
+            {"color": "blue", "value": null}
+          ]}
+        }
+      },
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
+      "targets": [{
+        "expr": "count(count by (server) (count_over_time({job=\"mcpproxy\", server=~\"$server\", server!=\"unknown\"} [$__range])))",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Events Over Time",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {"mode": "normal"}
+          }
+        }
+      },
+      "options": {"tooltip": {"mode": "multi"}},
+      "targets": [{
+        "expr": "sum by (event_type) (count_over_time({job=\"mcpproxy\", server=~\"$server\", event_type=~\"$event_type\", event_type!=\"tool_quarantine_change\"} [$__interval]))",
+        "legendFormat": "{{event_type}}",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Activity by Server",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {"mode": "normal"}
+          }
+        }
+      },
+      "options": {"tooltip": {"mode": "multi"}},
+      "targets": [{
+        "expr": "sum by (server) (count_over_time({job=\"mcpproxy\", server=~\"$server\", server!=\"unknown\", event_type=~\"$event_type\", event_type!=\"tool_quarantine_change\"} [$__interval]))",
+        "legendFormat": "{{server}}",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 20,
+      "type": "piechart",
+      "title": "Tool Calls by Server",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 12},
+      "options": {
+        "legend": {"displayMode": "table", "placement": "right", "values": ["value", "percent"]},
+        "pieType": "donut",
+        "reduceOptions": {"calcs": ["sum"]}
+      },
+      "targets": [{
+        "expr": "sum by (server) (count_over_time({job=\"mcpproxy\", event_type=\"tool_call\", server=~\"$server\"} [$__range]))",
+        "legendFormat": "{{server}}",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 21,
+      "type": "piechart",
+      "title": "Events by Type",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 12},
+      "options": {
+        "legend": {"displayMode": "table", "placement": "right", "values": ["value", "percent"]},
+        "pieType": "donut",
+        "reduceOptions": {"calcs": ["sum"]}
+      },
+      "targets": [{
+        "expr": "sum by (event_type) (count_over_time({job=\"mcpproxy\", server=~\"$server\", event_type=~\"$event_type\", event_type!=\"tool_quarantine_change\"} [$__range]))",
+        "legendFormat": "{{event_type}}",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 22,
+      "type": "piechart",
+      "title": "Events by Status",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 12},
+      "options": {
+        "legend": {"displayMode": "table", "placement": "right", "values": ["value", "percent"]},
+        "pieType": "donut",
+        "reduceOptions": {"calcs": ["sum"]}
+      },
+      "targets": [{
+        "expr": "sum by (event_status) (count_over_time({job=\"mcpproxy\", server=~\"$server\", event_type=~\"$event_type\", event_type!=\"tool_quarantine_change\"} [$__range]))",
+        "legendFormat": "{{event_status}}",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 23,
+      "type": "piechart",
+      "title": "Tools by Approval Status",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 8, "w": 8, "x": 0, "y": 20},
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "Value #A"}, "properties": [{"id": "displayName", "value": "Approved"}]},
+          {"matcher": {"id": "byName", "options": "Value #B"}, "properties": [{"id": "displayName", "value": "Pending"}]}
+        ]
+      },
+      "options": {
+        "legend": {"displayMode": "table", "placement": "right", "values": ["value", "percent"]},
+        "pieType": "donut",
+        "reduceOptions": {"calcs": ["lastNotNull"]}
+      },
+      "targets": [
+        {
+          "expr": "count(sum by (tool_name) (count_over_time({job=\"mcpproxy\", event_type=\"tool_quarantine_change\", event_status=\"tool_approved\"} | json [14d])))",
+          "legendFormat": "approved",
+          "refId": "A",
+          "instant": true
+        },
+        {
+          "expr": "count(sum by (tool_name) (count_over_time({job=\"mcpproxy\", event_type=\"tool_quarantine_change\", event_status=\"tool_discovered\"} | json [14d])) unless sum by (tool_name) (count_over_time({job=\"mcpproxy\", event_type=\"tool_quarantine_change\", event_status=\"tool_approved\"} | json [14d])))",
+          "legendFormat": "pending",
+          "refId": "B",
+          "instant": true
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "type": "table",
+      "title": "Pending Approval by Server",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 8, "w": 8, "x": 8, "y": 20},
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "Value #A"}, "properties": [{"id": "displayName", "value": "Pending Tools"}]},
+          {"matcher": {"id": "byName", "options": "server"}, "properties": [{"id": "displayName", "value": "Server"}]},
+          {"matcher": {"id": "byName", "options": "Time"}, "properties": [{"id": "custom.hidden", "value": true}]}
+        ]
+      },
+      "options": {
+        "sortBy": [{"displayName": "Pending Tools", "desc": true}]
+      },
+      "transformations": [
+        {"id": "sortBy", "options": {"sort": [{"field": "Value #A", "desc": true}]}}
+      ],
+      "targets": [{
+        "expr": "count by (server) (sum by (tool_name, server) (count_over_time({job=\"mcpproxy\", event_type=\"tool_quarantine_change\", event_status=\"tool_discovered\"} | json [14d])) unless sum by (tool_name, server) (count_over_time({job=\"mcpproxy\", event_type=\"tool_quarantine_change\", event_status=\"tool_approved\"} | json [14d])))",
+        "legendFormat": "{{server}}",
+        "refId": "A",
+        "instant": true
+      }]
+    },
+    {
+      "id": 30,
+      "type": "table",
+      "title": "Top Tools Called",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 28},
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "Value #A"}, "properties": [{"id": "displayName", "value": "Calls"}]},
+          {"matcher": {"id": "byName", "options": "tool_name"}, "properties": [{"id": "displayName", "value": "Tool"}]},
+          {"matcher": {"id": "byName", "options": "Time"}, "properties": [{"id": "custom.hidden", "value": true}]}
+        ]
+      },
+      "options": {
+        "sortBy": [{"displayName": "Calls", "desc": true}]
+      },
+      "transformations": [
+        {"id": "sortBy", "options": {"sort": [{"field": "Value #A", "desc": true}]}}
+      ],
+      "targets": [{
+        "expr": "sum by (tool_name) (count_over_time({job=\"mcpproxy\", event_type=\"tool_call\", server=~\"$server\"} | json | tool_name!=\"\" [$__range]))",
+        "legendFormat": "{{tool_name}}",
+        "refId": "A",
+        "instant": true
+      }]
+    },
+    {
+      "id": 31,
+      "type": "table",
+      "title": "Recent Errors",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 28},
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {"matcher": {"id": "byName", "options": "Line"}, "properties": [{"id": "displayName", "value": "Error"}]},
+          {"matcher": {"id": "byName", "options": "labels"}, "properties": [{"id": "custom.hidden", "value": true}]},
+          {"matcher": {"id": "byName", "options": "tsNs"}, "properties": [{"id": "custom.hidden", "value": true}]},
+          {"matcher": {"id": "byName", "options": "id"}, "properties": [{"id": "custom.hidden", "value": true}]}
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "sortBy": [{"displayName": "Time", "desc": true}]
+      },
+      "targets": [{
+        "expr": "{job=\"mcpproxy\", event_status=\"error\", server=~\"$server\"} | json | line_format \"{{.server_name}} / {{.tool_name}}: {{.status}}\"",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 40,
+      "type": "logs",
+      "title": "Activity Log",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 36},
+      "options": {
+        "showTime": true,
+        "showLabels": true,
+        "showCommonLabels": false,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": true,
+        "enableLogDetails": true,
+        "sortOrder": "Descending",
+        "dedupStrategy": "none"
+      },
+      "targets": [{
+        "expr": "{job=\"mcpproxy\", server=~\"$server\", event_type=~\"$event_type\"}",
+        "refId": "A"
+      }]
+    }
+  ]
+}
