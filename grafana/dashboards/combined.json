@@ -1,0 +1,183 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "title": "AI Coding — All-in-one (Claude Code + Copilot)",
+  "uid": "ai-coding-combined",
+  "version": 1,
+  "schemaVersion": 39,
+  "refresh": "30s",
+  "time": {"from": "now-3h", "to": "now"},
+  "tags": ["claude-code", "copilot", "otel", "combined"],
+  "templating": {"list": []},
+  "panels": [
+
+    { "id": 100, "type": "stat", "title": "Claude Code — total cost",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 0},
+      "fieldConfig": {"defaults": {"unit": "currencyUSD", "decimals": 2, "color": {"mode": "fixed", "fixedColor": "blue"}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
+      "targets": [{"expr": "sum(increase(claude_code_cost_usage_USD_total[$__range]))", "instant": true, "refId": "A"}]
+    },
+    { "id": 101, "type": "stat", "title": "Claude Code — tokens",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 0},
+      "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "fixed", "fixedColor": "blue"}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
+      "targets": [{"expr": "sum(increase(claude_code_token_usage_tokens_total[$__range]))", "instant": true, "refId": "A"}]
+    },
+    { "id": 102, "type": "stat", "title": "Claude Code — active time",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 0},
+      "fieldConfig": {"defaults": {"unit": "s", "color": {"mode": "fixed", "fixedColor": "blue"}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
+      "targets": [{"expr": "sum(increase(claude_code_active_time_seconds_total[$__range]))", "instant": true, "refId": "A"}]
+    },
+    { "id": 103, "type": "stat", "title": "Claude Code — lines added",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 0},
+      "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "fixed", "fixedColor": "blue"}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
+      "targets": [{"expr": "sum(increase(claude_code_lines_of_code_count_total{type=\"added\"}[$__range]))", "instant": true, "refId": "A"}]
+    },
+    { "id": 104, "type": "stat", "title": "Copilot — tokens",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 0},
+      "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "fixed", "fixedColor": "purple"}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
+      "targets": [{"expr": "sum(increase(gen_ai_client_token_usage_sum[$__range]))", "instant": true, "refId": "A"}]
+    },
+    { "id": 105, "type": "stat", "title": "Copilot — est. cost",
+      "description": "Estimate from token usage × public per-token API prices. NOT what GitHub bills you.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 0},
+      "fieldConfig": {"defaults": {"unit": "currencyUSD", "decimals": 4, "color": {"mode": "fixed", "fixedColor": "purple"}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
+      "targets": [{
+        "expr": "sum(\n    (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=\"gpt-4.1\", gen_ai_token_type=\"input\"}[$__range]) * 0.000002)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=\"gpt-4.1\", gen_ai_token_type=\"output\"}[$__range]) * 0.000008)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o-mini.*\", gen_ai_token_type=\"input\"}[$__range]) * 0.00000015)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o-mini.*\", gen_ai_token_type=\"output\"}[$__range]) * 0.0000006)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o\", gen_ai_token_type=\"input\"}[$__range]) * 0.0000025)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o\", gen_ai_token_type=\"output\"}[$__range]) * 0.00001)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"claude-3-5-sonnet.*|claude-3.5-sonnet.*|claude-3-7-sonnet.*|claude-3.7-sonnet.*|claude-sonnet-4.*\", gen_ai_token_type=\"input\"}[$__range]) * 0.000003)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"claude-3-5-sonnet.*|claude-3.5-sonnet.*|claude-3-7-sonnet.*|claude-3.7-sonnet.*|claude-sonnet-4.*\", gen_ai_token_type=\"output\"}[$__range]) * 0.000015)\n)",
+        "instant": true, "refId": "A"
+      }]
+    },
+
+    { "id": 110, "type": "stat", "title": "Copilot — LLM requests",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 4, "x": 0, "y": 4},
+      "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "fixed", "fixedColor": "purple"}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
+      "targets": [{"expr": "sum(increase(gen_ai_client_token_usage_count[$__range]))", "instant": true, "refId": "A"}]
+    },
+    { "id": 111, "type": "stat", "title": "Copilot — sessions",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 4, "x": 4, "y": 4},
+      "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "fixed", "fixedColor": "purple"}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
+      "targets": [{"expr": "sum(increase(copilot_chat_session_count_total[$__range]))", "instant": true, "refId": "A"}]
+    },
+    { "id": 112, "type": "stat", "title": "Copilot — tool calls",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 4, "x": 8, "y": 4},
+      "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "fixed", "fixedColor": "purple"}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
+      "targets": [{"expr": "sum(increase(copilot_chat_tool_call_count_total[$__range]))", "instant": true, "refId": "A"}]
+    },
+    { "id": 113, "type": "stat", "title": "Combined — total tokens",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 4, "x": 12, "y": 4},
+      "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "fixed", "fixedColor": "green"}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
+      "targets": [{"expr": "sum(increase(claude_code_token_usage_tokens_total[$__range])) + sum(increase(gen_ai_client_token_usage_sum[$__range]))", "instant": true, "refId": "A"}]
+    },
+    { "id": 114, "type": "stat", "title": "Combined — total cost",
+      "description": "Claude Code actual + Copilot estimated.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 4, "x": 16, "y": 4},
+      "fieldConfig": {"defaults": {"unit": "currencyUSD", "decimals": 4, "color": {"mode": "fixed", "fixedColor": "green"}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
+      "targets": [{
+        "expr": "(sum(increase(claude_code_cost_usage_USD_total[$__range])) or vector(0))\n+\n(sum(\n    (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=\"gpt-4.1\", gen_ai_token_type=\"input\"}[$__range]) * 0.000002)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=\"gpt-4.1\", gen_ai_token_type=\"output\"}[$__range]) * 0.000008)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o-mini.*\", gen_ai_token_type=\"input\"}[$__range]) * 0.00000015)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o-mini.*\", gen_ai_token_type=\"output\"}[$__range]) * 0.0000006)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o\", gen_ai_token_type=\"input\"}[$__range]) * 0.0000025)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o\", gen_ai_token_type=\"output\"}[$__range]) * 0.00001)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"claude-3-5-sonnet.*|claude-3.5-sonnet.*|claude-3-7-sonnet.*|claude-3.7-sonnet.*|claude-sonnet-4.*\", gen_ai_token_type=\"input\"}[$__range]) * 0.000003)\n  or (increase(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"claude-3-5-sonnet.*|claude-3.5-sonnet.*|claude-3-7-sonnet.*|claude-3.7-sonnet.*|claude-sonnet-4.*\", gen_ai_token_type=\"output\"}[$__range]) * 0.000015)\n) or vector(0))",
+        "instant": true, "refId": "A"
+      }]
+    },
+    { "id": 115, "type": "stat", "title": "Combined — tool ops",
+      "description": "Claude Code edit-tool decisions + Copilot tool calls.",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 4, "w": 4, "x": 20, "y": 4},
+      "fieldConfig": {"defaults": {"unit": "short", "color": {"mode": "fixed", "fixedColor": "green"}}},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "value"},
+      "targets": [{"expr": "(sum(increase(claude_code_code_edit_tool_decision_total[$__range])) or vector(0)) + (sum(increase(copilot_chat_tool_call_count_total[$__range])) or vector(0))", "instant": true, "refId": "A"}]
+    },
+
+    { "id": 200, "type": "timeseries", "title": "Cost rate USD/hour by model (Claude actual + Copilot estimated)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 24, "x": 0, "y": 8},
+      "fieldConfig": {"defaults": {"unit": "currencyUSD"}},
+      "targets": [
+        {"expr": "sum by (model) (rate(claude_code_cost_usage_USD_total[5m])) * 3600", "legendFormat": "Claude: {{model}}", "refId": "A"},
+        {"expr": "sum by (gen_ai_request_model) (\n    (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=\"gpt-4.1\", gen_ai_token_type=\"input\"}[5m]) * 0.000002)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=\"gpt-4.1\", gen_ai_token_type=\"output\"}[5m]) * 0.000008)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o-mini.*\", gen_ai_token_type=\"input\"}[5m]) * 0.00000015)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o-mini.*\", gen_ai_token_type=\"output\"}[5m]) * 0.0000006)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o\", gen_ai_token_type=\"input\"}[5m]) * 0.0000025)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"gpt-4o\", gen_ai_token_type=\"output\"}[5m]) * 0.00001)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"claude-3-5-sonnet.*|claude-3.5-sonnet.*|claude-3-7-sonnet.*|claude-3.7-sonnet.*|claude-sonnet-4.*\", gen_ai_token_type=\"input\"}[5m]) * 0.000003)\n  or (rate(gen_ai_client_token_usage_sum{gen_ai_request_model=~\"claude-3-5-sonnet.*|claude-3.5-sonnet.*|claude-3-7-sonnet.*|claude-3.7-sonnet.*|claude-sonnet-4.*\", gen_ai_token_type=\"output\"}[5m]) * 0.000015)\n) * 3600", "legendFormat": "Copilot: {{gen_ai_request_model}}", "refId": "B"}
+      ]
+    },
+
+    { "id": 210, "type": "timeseries", "title": "Claude Code — tokens/min by type",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 17},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [{"expr": "sum by (type) (rate(claude_code_token_usage_tokens_total[5m])) * 60", "legendFormat": "{{type}}", "refId": "A"}]
+    },
+    { "id": 211, "type": "timeseries", "title": "Copilot — tokens/min by type",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 17},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [{"expr": "sum by (gen_ai_token_type) (rate(gen_ai_client_token_usage_sum[5m])) * 60", "legendFormat": "{{gen_ai_token_type}}", "refId": "A"}]
+    },
+
+    { "id": 220, "type": "timeseries", "title": "Copilot — LLM operation duration p50/p95 (ms)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 25},
+      "fieldConfig": {"defaults": {"unit": "ms"}},
+      "targets": [
+        {"expr": "histogram_quantile(0.50, sum by (le, gen_ai_request_model) (rate(gen_ai_client_operation_duration_bucket[5m])))", "legendFormat": "p50 {{gen_ai_request_model}}", "refId": "A"},
+        {"expr": "histogram_quantile(0.95, sum by (le, gen_ai_request_model) (rate(gen_ai_client_operation_duration_bucket[5m])))", "legendFormat": "p95 {{gen_ai_request_model}}", "refId": "B"}
+      ]
+    },
+    { "id": 221, "type": "timeseries", "title": "Copilot — time to first token p95 (ms)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 25},
+      "fieldConfig": {"defaults": {"unit": "ms"}},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le) (rate(copilot_chat_time_to_first_token_bucket[5m])))", "legendFormat": "p95", "refId": "A"}]
+    },
+
+    { "id": 230, "type": "barchart", "title": "Copilot — tool calls by tool (top 10)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 33},
+      "fieldConfig": {"defaults": {"unit": "short"}},
+      "targets": [{"expr": "topk(10, sum by (gen_ai_tool_name) (increase(copilot_chat_tool_call_count_total[$__range])))", "legendFormat": "{{gen_ai_tool_name}}", "refId": "A", "instant": true}]
+    },
+    { "id": 231, "type": "timeseries", "title": "Copilot — tool call duration p95 (ms)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 33},
+      "fieldConfig": {"defaults": {"unit": "ms"}},
+      "targets": [{"expr": "histogram_quantile(0.95, sum by (le, gen_ai_tool_name) (rate(copilot_chat_tool_call_duration_bucket[5m])))", "legendFormat": "p95 {{gen_ai_tool_name}}", "refId": "A"}]
+    },
+
+    { "id": 240, "type": "barchart", "title": "Claude Code — cost by user (top 10)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 41},
+      "fieldConfig": {"defaults": {"unit": "currencyUSD"}},
+      "targets": [{"expr": "topk(10, sum by (user_email) (increase(claude_code_cost_usage_USD_total[$__range])))", "legendFormat": "{{user_email}}", "refId": "A", "instant": true}]
+    },
+    { "id": 241, "type": "piechart", "title": "Claude Code — edit tool decisions",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 41},
+      "targets": [{"expr": "sum by (decision) (increase(claude_code_code_edit_tool_decision_total[$__range]))", "legendFormat": "{{decision}}", "refId": "A", "instant": true}]
+    },
+
+    { "id": 300, "type": "logs", "title": "All AI coding events (Claude Code + Copilot)",
+      "datasource": {"type": "loki", "uid": "loki"},
+      "gridPos": {"h": 14, "w": 24, "x": 0, "y": 49},
+      "options": {"showTime": true, "wrapLogMessage": true, "dedupStrategy": "none"},
+      "targets": [{"expr": "{service_name=~\"claude-code|copilot-chat\"}", "refId": "A"}]
+    }
+  ]
+}
