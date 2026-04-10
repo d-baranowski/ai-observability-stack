@@ -52,10 +52,11 @@
           ]}
         }
       },
-      "options": {"reduceOptions": {"calcs": ["sum"]}, "colorMode": "background"},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
       "targets": [{
         "expr": "sum(count_over_time({job=\"mcpproxy\", server=~\"$server\", event_type=~\"$event_type\", event_type!=\"tool_quarantine_change\"} [$__range]))",
-        "refId": "A"
+        "refId": "A",
+        "instant": true
       }]
     },
     {
@@ -72,10 +73,11 @@
           ]}
         }
       },
-      "options": {"reduceOptions": {"calcs": ["sum"]}, "colorMode": "background"},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
       "targets": [{
         "expr": "sum(count_over_time({job=\"mcpproxy\", event_type=\"tool_call\", server=~\"$server\"} [$__range]))",
-        "refId": "A"
+        "refId": "A",
+        "instant": true
       }]
     },
     {
@@ -93,10 +95,11 @@
           ]}
         }
       },
-      "options": {"reduceOptions": {"calcs": ["sum"]}, "colorMode": "background"},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
       "targets": [{
         "expr": "sum(count_over_time({job=\"mcpproxy\", event_status=\"error\", server=~\"$server\"} [$__range]))",
-        "refId": "A"
+        "refId": "A",
+        "instant": true
       }]
     },
     {
@@ -115,10 +118,11 @@
           ]}
         }
       },
-      "options": {"reduceOptions": {"calcs": ["sum"]}, "colorMode": "background"},
+      "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background"},
       "targets": [{
         "expr": "sum(count_over_time({job=\"mcpproxy\", server=~\"$server\"} | json | has_sensitive_data=`true` [$__range]))",
-        "refId": "A"
+        "refId": "A",
+        "instant": true
       }]
     },
     {

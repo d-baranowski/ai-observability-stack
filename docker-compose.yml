@@ -36,6 +36,25 @@ services:
     ports:
       - "3100:3100"
 
+  mcpproxy-shipper:
+    image: python:3.12-alpine
+    container_name: mcpproxy-shipper
+    entrypoint: ["python3", "/app/mcpproxy-shipper.py"]
+    volumes:
+      - ./mcpproxy-shipper.py:/app/mcpproxy-shipper.py:ro
+      - shipper-data:/data
+    environment:
+      LOKI_URL: http://loki:3100/loki/api/v1/push
+      MCPPROXY_URL: http://host.docker.internal:18420
+      MCPPROXY_API_KEY: ${MCPPROXY_API_KEY}
+      POLL_INTERVAL: "5"
+      DB_PATH: /data/shipper.db
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - loki
+    restart: unless-stopped
+
   grafana:
     image: grafana/grafana:11.4.0
     container_name: grafana
@@ -62,3 +81,4 @@ volumes:
   prometheus-data:
   loki-data:
   grafana-data:
+  shipper-data:
