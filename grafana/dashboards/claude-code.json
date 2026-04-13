@@ -197,21 +197,39 @@
     {
       "id": 6,
       "type": "timeseries",
-      "title": "Tokens by type (rate/s)",
+      "title": "Input & Output tokens (rate/s)",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
       "gridPos": {"h": 9, "w": 12, "x": 12, "y": 27},
       "fieldConfig": {
         "defaults": {"unit": "short"},
         "overrides": [
           {"matcher": {"id": "byName", "options": "input"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}]},
-          {"matcher": {"id": "byName", "options": "output"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}]},
+          {"matcher": {"id": "byName", "options": "output"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}]}
+        ]
+      },
+      "options": {"tooltip": {"mode": "multi"}},
+      "targets": [{
+        "expr": "sum by (type) (rate(claude_code_token_usage_tokens_total{user_email=~\"$user\", model=~\"$model\", type=~\"input|output\"}[5m]))",
+        "legendFormat": "{{type}}",
+        "refId": "A"
+      }]
+    },
+    {
+      "id": 17,
+      "type": "timeseries",
+      "title": "Cache tokens (rate/s)",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 36},
+      "fieldConfig": {
+        "defaults": {"unit": "short"},
+        "overrides": [
           {"matcher": {"id": "byName", "options": "cacheRead"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]},
           {"matcher": {"id": "byName", "options": "cacheCreation"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "purple"}}]}
         ]
       },
       "options": {"tooltip": {"mode": "multi"}},
       "targets": [{
-        "expr": "sum by (type) (rate(claude_code_token_usage_tokens_total{user_email=~\"$user\", model=~\"$model\"}[5m]))",
+        "expr": "sum by (type) (rate(claude_code_token_usage_tokens_total{user_email=~\"$user\", model=~\"$model\", type=~\"cacheRead|cacheCreation\"}[5m]))",
         "legendFormat": "{{type}}",
         "refId": "A"
       }]
@@ -233,19 +251,36 @@
     {
       "id": 15,
       "type": "piechart",
-      "title": "Token distribution by type",
+      "title": "Input & Output distribution",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 36},
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 45},
       "fieldConfig": {
         "overrides": [
           {"matcher": {"id": "byName", "options": "input"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "blue"}}]},
-          {"matcher": {"id": "byName", "options": "output"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}]},
+          {"matcher": {"id": "byName", "options": "output"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "orange"}}]}
+        ]
+      },
+      "targets": [{
+        "expr": "sum by (type) (increase(claude_code_token_usage_tokens_total{user_email=~\"$user\", model=~\"$model\", type=~\"input|output\"}[$__range]))",
+        "legendFormat": "{{type}}",
+        "refId": "A",
+        "instant": true
+      }]
+    },
+    {
+      "id": 18,
+      "type": "piechart",
+      "title": "Cache token distribution",
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 45},
+      "fieldConfig": {
+        "overrides": [
           {"matcher": {"id": "byName", "options": "cacheRead"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}]},
           {"matcher": {"id": "byName", "options": "cacheCreation"}, "properties": [{"id": "color", "value": {"mode": "fixed", "fixedColor": "purple"}}]}
         ]
       },
       "targets": [{
-        "expr": "sum by (type) (increase(claude_code_token_usage_tokens_total{user_email=~\"$user\", model=~\"$model\"}[$__range]))",
+        "expr": "sum by (type) (increase(claude_code_token_usage_tokens_total{user_email=~\"$user\", model=~\"$model\", type=~\"cacheRead|cacheCreation\"}[$__range]))",
         "legendFormat": "{{type}}",
         "refId": "A",
         "instant": true
@@ -256,7 +291,7 @@
       "type": "barchart",
       "title": "Cost by user (top 10)",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 45},
+      "gridPos": {"h": 9, "w": 12, "x": 0, "y": 54},
       "fieldConfig": {"defaults": {"unit": "currencyUSD"}},
       "targets": [{
         "expr": "topk(10, sum by (user_email) (increase(claude_code_cost_usage_USD_total[$__range])))",
@@ -270,7 +305,7 @@
       "type": "piechart",
       "title": "Edit tool decisions",
       "datasource": {"type": "prometheus", "uid": "prometheus"},
-      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 45},
+      "gridPos": {"h": 9, "w": 12, "x": 12, "y": 54},
       "targets": [{
         "expr": "sum by (decision) (increase(claude_code_code_edit_tool_decision_total{user_email=~\"$user\"}[$__range]))",
         "legendFormat": "{{decision}}",
@@ -283,7 +318,7 @@
       "type": "logs",
       "title": "Claude Code events (Loki)",
       "datasource": {"type": "loki", "uid": "loki"},
-      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 54},
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 63},
       "options": {"showTime": true, "wrapLogMessage": true, "dedupStrategy": "none"},
       "targets": [{
         "expr": "{service_name=\"claude-code\"}",
