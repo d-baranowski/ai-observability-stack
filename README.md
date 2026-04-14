@@ -60,6 +60,75 @@ export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
 Reload the window. The "GitHub Copilot — Usage & Latency" dashboard lives in
 the **Copilot** folder.
 
+## Point Cursor at the stack
+
+Cursor telemetry comes from two sources:
+
+### 1. Local activity metrics (all plans — automatic)
+
+The `cursor-shipper` container reads Cursor's local SQLite databases and pushes
+metrics every 30 s. It requires no configuration beyond having Cursor installed
+and logged in.
+
+**What you get:**
+- `cursor_local_requests` — unique agent request IDs (proxy for AI requests)
+- `cursor_local_code_files{file_ext}` — AI-generated code files by extension
+- `cursor_local_lines_added` — lines of code added by Cursor agent
+
+The shipper mounts two read-only host paths:
+
+| Host path | What it reads |
+|---|---|
+| `~/Library/Application Support/Cursor/User/globalStorage/` | Auth token, composer sessions |
+| `~/.cursor/ai-tracking/` | Agent requests, code hashes, scored commits |
+
+> **macOS only.** If you're on Linux, update the volume mounts in
+> `docker-compose.yml` to point at `~/.config/Cursor/` instead.
+
+### 2. Premium fast-request counters (Pro/Business plans)
+
+The shipper also polls `https://api2.cursor.sh/auth/usage` and pushes
+`cursor_usage_requests` / `cursor_usage_tokens` gauges (monthly running totals,
+reset each billing cycle). On the **Free plan these will always be 0** — Cursor
+only counts premium fast requests there.
+
+### 3. Agent turn traces (optional — all plans)
+
+Install [cursor-otel](https://github.com/smith/cursor-otel) as a Cursor MCP
+server to get per-turn traces: latency (p50/p95), model, tool calls, and
+conversation logs.
+
+```bash
+git clone https://github.com/smith/cursor-otel.git ~/cursor-otel
+cd ~/cursor-otel && npm install
+```
+
+Add to `~/.cursor/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "cursor-otel": {
+      "command": "node",
+      "args": ["/Users/YOUR_USER/cursor-otel/index.mjs"]
+    }
+  }
+}
+```
+
+Then add a Cursor rule (`.cursor/rules/otel.mdc` in any project) instructing
+the agent to call `start_turn` / `end_turn` on every turn:
+
+```
+At the start of every agent turn call the cursor-otel start_turn tool with the user message.
+At the end of every agent turn call the cursor-otel end_turn tool with a brief response summary and tool_count.
+```
+
+The collector already accepts OTLP on `:4318` — no further config needed.
+
+> **Tip:** run `/setup-cursor` in Claude Code to walk through all of this
+> automatically.
+
 ## What you get
 
 **Dashboard panels** (filterable by user + model):

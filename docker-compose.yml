@@ -55,6 +55,23 @@ services:
       - loki
     restart: unless-stopped
 
+  cursor-shipper:
+    image: python:3.12-alpine
+    container_name: cursor-shipper
+    entrypoint: ["python3", "/app/cursor-shipper.py"]
+    volumes:
+      - ./cursor-shipper.py:/app/cursor-shipper.py:ro
+      - "/Users/danielbaranowski/Library/Application Support/Cursor/User/globalStorage:/data/cursor-globalStorage:ro"
+      - "/Users/danielbaranowski/.cursor/ai-tracking:/data/cursor-ai-tracking:ro"
+    environment:
+      CURSOR_DB: /data/cursor-globalStorage/state.vscdb
+      AI_TRACKING_DB: /data/cursor-ai-tracking/ai-code-tracking.db
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      POLL_INTERVAL: "30"
+    depends_on:
+      - otel-collector
+    restart: unless-stopped
+
   grafana:
     image: grafana/grafana:11.4.0
     container_name: grafana

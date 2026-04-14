@@ -6,6 +6,22 @@ receivers:
       http:
         endpoint: 0.0.0.0:4318
 
+# spanmetrics derives Prometheus metrics from incoming traces.
+# Acts as an exporter in the traces pipeline and a receiver in the metrics pipeline.
+connectors:
+  spanmetrics:
+    namespace: cursor
+    histogram:
+      explicit:
+        buckets: [500, 1000, 2000, 5000, 10000, 30000, 60000, 120000]  # ms
+    dimensions:
+      - name: gen_ai.request.model
+        default: unknown
+      - name: gen_ai.operation.name
+        default: unknown
+    dimensions_cache_size: 1000
+    metrics_expiration: 5m
+
 processors:
   batch:
     timeout: 5s
@@ -35,8 +51,13 @@ exporters:
 
 service:
   pipelines:
-    metrics:
+    # Cursor agent traces → spanmetrics (derives metrics) + debug
+    traces:
       receivers: [otlp]
+      processors: [batch]
+      exporters: [spanmetrics, debug]
+    metrics:
+      receivers: [otlp, spanmetrics]
       processors: [batch]
       exporters: [prometheus, debug]
     logs:
